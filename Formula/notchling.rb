@@ -1,18 +1,13 @@
 class Notchling < Formula
   desc "Notch widget showing live status for every Claude Code session"
   homepage "https://github.com/CircleHP/notchling"
-  url "https://github.com/CircleHP/notchling/releases/download/v1.0.0/notchling-1.0.0-universal.tar.gz"
-  sha256 "2a68ad014cb96ba36cf05b2bedf8b1d7660179cd887a113e858f2b75c1aa1123"
+  url "https://github.com/CircleHP/notchling/releases/download/v1.0.1/notchling-1.0.1-universal.tar.gz"
+  sha256 "625be0f4fa3a08b76a30df4ab96f48102b3211d96032fffea70999f77b181c9e"
   license "MIT"
 
   livecheck do
     url :stable
     strategy :github_latest
-  end
-
-  bottle do
-    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.0"
-    sha256 cellar: :any_skip_relocation, all: "caa38d3f591d35e2ff887a14e7c712e7509137a9e1024041d0fc31d59dbf8540"
   end
 
   # Builds on the user's machine instead, for contributors and for anyone who would rather not run a
@@ -58,29 +53,19 @@ class Notchling < Formula
 
   def caveats
     <<~EOS
-      Wire the Claude Code hooks. Preferred, and it edits nothing — inside Claude Code:
+      One command finishes the setup, asking before it changes anything:
+
+        notchling-hooks setup
+
+      It wires the Claude Code hooks, offers the plan-usage status line, and starts the widget
+      now and at login. Then restart any Claude sessions that were already running — hooks are
+      read at session start.
+
+      To have the hooks come from a plugin instead, so nothing edits ~/.claude/settings.json,
+      run this inside Claude Code rather than the command above:
 
         /plugin marketplace add CircleHP/notchling
         /plugin install notchling@circlehp
-
-      Or without the plugin, which writes to ~/.claude/settings.json (backed up first, and appended
-      to rather than replaced, so other tools' hooks survive):
-
-        notchling-hooks install
-
-      Use one or the other, never both: plugin hooks merge with the ones in settings.json, so two
-      copies mean every event is reported twice.
-
-      Restart any Claude sessions that were already running — hooks are read at session start.
-
-      Start it now, and at login:
-
-        brew services start notchling
-
-      Optional, for the plan-usage bars. Not available through the plugin, and it makes Claude Code
-      drop some of its footer hints:
-
-        notchling-hooks statusline
     EOS
   end
 
