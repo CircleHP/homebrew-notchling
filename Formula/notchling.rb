@@ -10,6 +10,11 @@ class Notchling < Formula
     strategy :github_latest
   end
 
+  bottle do
+    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.1"
+    sha256 cellar: :any_skip_relocation, all: "679df893b9296b68ac2451664f71fb34f00c8bdc9b8a73987f5bb2671ecd6a55"
+  end
+
   # Builds on the user's machine instead, for contributors and for anyone who would rather not run a
   # binary they did not compile. Only this path needs a toolchain, which is why the dependency is here.
   head do
