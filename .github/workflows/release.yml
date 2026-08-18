@@ -1,0 +1,169 @@
+name: Release
+
+# Brings the formula up to a published notchling release: new url and checksum, a bottle built from
+# it, and both landed in a single commit.
+#
+# One commit matters. Updating the url first and adding the bottle afterwards leaves the formula
+# publicly naming a version it has no bottle for, and Homebrew treats a formula it cannot pour as a
+# source build — so anyone whose `brew update` lands in that window is refused for want of Command
+# Line Tools that nothing here uses.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, without the leading v. Blank uses the latest release.
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: update, bottle and prove it pours
+    # Not macos-15: its toolchain cannot link the universal binary this installs. See the notchling
+    # repo's CI for the detail.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@b35a29a0f83ee8b8ca07b219fc8db3d7bb88ab49 # 2026.08.10.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve the version and its checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          version="$INPUT_VERSION"
+          if [ -z "$version" ]; then
+            version=$(gh release view --repo CircleHP/notchling --json tagName --jq .tagName | sed 's/^v//')
+          fi
+          url="https://github.com/CircleHP/notchling/releases/download/v$version/notchling-$version-universal.tar.gz"
+
+          # Computed from the asset, never read from the checksum file beside it: a mismatch between
+          # the two is exactly what a tampered download looks like, so compare them and stop if they
+          # disagree.
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors -o tarball.tar.gz "$url"
+          computed=$(shasum -a 256 tarball.tar.gz | awk '{print $1}')
+          published=$(curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "$url.sha256" | awk '{print $1}')
+          echo "computed=$computed published=$published"
+          test "$computed" = "$published"
+
+          {
+            echo "VERSION=$version"
+            echo "TARBALL_URL=$url"
+            echo "TARBALL_SHA=$computed"
+          } >> "$GITHUB_ENV"
+
+      # Nothing is pushed here. The formula is rewritten in the working copy so the bottle can be
+      # built from it, and the commit comes later with the bottle already in hand.
+      - name: Point the formula at it
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re
+          path = pathlib.Path("Formula/notchling.rb")
+          source = path.read_text()
+          source = re.sub(r'^  url ".*"$', f'  url "{os.environ["TARBALL_URL"]}"', source, count=1, flags=re.M)
+          source = re.sub(r'^  sha256 "[0-9a-f]{64}"$', f'  sha256 "{os.environ["TARBALL_SHA"]}"', source, count=1, flags=re.M)
+          # The previous bottle cannot serve this version.
+          source = re.sub(r"\n  bottle do\n(?:.*\n)*?  end\n", "\n", source, count=1)
+          path.write_text(source)
+          PY
+          brew style --fix Formula/notchling.rb
+          head -8 Formula/notchling.rb
+
+      # Homebrew reads the formula from its own clone of the tap, so the rewritten one has to be put
+      # there. `brew bottle` repackages an installed keg and refuses one not installed this way.
+      - name: Install for bottling
+        run: |
+          brew tap CircleHP/notchling
+          cp Formula/notchling.rb "$(brew --repository CircleHP/notchling)/Formula/notchling.rb"
+          brew install --build-bottle circlehp/notchling/notchling
+          installed=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
+            "$(brew --prefix)/opt/notchling/Notchling.app/Contents/Info.plist")
+          echo "bundle reports $installed, releasing $VERSION"
+          test "$installed" = "$VERSION"
+
+      - name: Bottle
+        run: |
+          brew bottle --json --no-rebuild \
+            --root-url="https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-$VERSION" \
+            circlehp/notchling/notchling
+
+          # One bottle serves every platform only if Homebrew agrees nothing needs relocating. If it
+          # ever disagrees, stop rather than publish a bottle that breaks on the other prefix.
+          cellar=$(jq -r '.[].bottle.cellar' ./*.bottle.json | sed 's/^://')
+          echo "cellar: $cellar"
+          test "$cellar" = "any_skip_relocation"
+
+          # One dash, not the two `brew bottle` writes: Homebrew names the local file
+          # "name--version.tag.bottle.tar.gz" and fetches "name-version.tag.bottle.tar.gz"
+          # (bottle.rb, Filename#to_str versus #url_encode).
+          mv "$(ls ./*.bottle.tar.gz)" "notchling-$VERSION.all.bottle.tar.gz"
+          echo "BOTTLE_SHA=$(shasum -a 256 "notchling-$VERSION.all.bottle.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Publish the bottle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "bottle-$VERSION" \
+            --title "Bottle $VERSION" \
+            --notes "Bottle for notchling $VERSION, poured by \`brew install circlehp/notchling/notchling\`." \
+            "notchling-$VERSION.all.bottle.tar.gz" \
+          || gh release upload "bottle-$VERSION" "notchling-$VERSION.all.bottle.tar.gz" --clobber
+
+      - name: Land url, checksum and bottle as one commit
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          version, sha = os.environ["VERSION"], os.environ["BOTTLE_SHA"]
+          path = pathlib.Path("Formula/notchling.rb")
+          block = ('  bottle do\n'
+                   f'    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-{version}"\n'
+                   f'    sha256 cellar: :any_skip_relocation, all: "{sha}"\n'
+                   '  end\n')
+          source = path.read_text()
+          path.write_text(source.replace('  license "MIT"\n', '  license "MIT"\n\n' + block, 1))
+          PY
+          # The block goes in after `license`, which is not where the style rules want it; let them
+          # move it rather than encoding the expected order here.
+          brew style --fix Formula/notchling.rb
+
+          git config user.name "CircleHP"
+          git config user.email "evmenovdv@gmail.com"
+          git add Formula/notchling.rb
+          git commit \
+            -m "build: notchling $VERSION" \
+            -m "Points at the $VERSION release and records the bottle built from it. Both in one commit: a formula that names a version it has no bottle for is a source build, and a source build is refused without developer tools."
+          # actions/checkout leaves the branch without an upstream, so name the remote and branch.
+          git push origin HEAD:main
+
+      # The point of the whole workflow, asserted rather than assumed.
+      - name: Prove it pours
+        run: |
+          brew uninstall --force notchling
+
+          # A newly uploaded asset can 404 for a minute or two while GitHub's CDN catches up.
+          url="https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-$VERSION/notchling-$VERSION.all.bottle.tar.gz"
+          for attempt in $(seq 1 12); do
+            code=$(curl -sSL -o /dev/null -w "%{http_code}" "$url")
+            echo "attempt $attempt: http=$code"
+            [ "$code" = "200" ] && break
+            sleep 15
+          done
+
+          tap_dir="$(brew --repository CircleHP/notchling)"
+          git -C "$tap_dir" fetch --quiet origin main
+          git -C "$tap_dir" reset --hard --quiet origin/main
+
+          brew install circlehp/notchling/notchling 2>&1 | tee install.log
+          grep -q "Pouring notchling-$VERSION.all.bottle.tar.gz" install.log
+          brew test circlehp/notchling/notchling
