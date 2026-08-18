@@ -91,7 +91,10 @@ jobs:
           source = source.replace('  license "MIT"\n', '  license "MIT"\n\n' + block, 1)
           path.write_text(source)
           PY
-          cat Formula/notchling.rb | head -20
+          # The block goes in after `license`, which is not where the style rules want it. Let
+          # them place it rather than encoding the expected order here.
+          brew style --fix Formula/notchling.rb
+          head -20 Formula/notchling.rb
 
       - name: Commit the formula
         env:
@@ -103,7 +106,7 @@ jobs:
           git commit \
             -m "build: bottle notchling $VERSION" \
             -m "Without a bottle Homebrew treats every install as a source build and refuses when the Command Line Tools are missing or outdated, though this formula compiles nothing."
-          git push
+          git push origin HEAD:main
 
       # The point of all of this, asserted rather than assumed: a fresh install must pour rather
       # than build. Anything else means the bottle is not being found or not being accepted.
