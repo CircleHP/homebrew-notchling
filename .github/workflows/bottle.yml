@@ -31,11 +31,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # From source, because that is what `brew bottle` packages: it repackages an installed keg.
-      - name: Install from source
+      # `brew bottle` repackages an installed keg, and refuses one that was not installed with
+      # --build-bottle. The fully-qualified name matters too: `brew install` trusts a third-party
+      # tap only when named in full (cmd/install.rb:204), and a bare name would be refused.
+      - name: Install for bottling
         run: |
           brew tap CircleHP/notchling
-          brew install --build-from-source circlehp/notchling/notchling
+          brew install --build-bottle circlehp/notchling/notchling
 
       - name: Bottle
         env:
