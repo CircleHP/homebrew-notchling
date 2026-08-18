@@ -12,7 +12,7 @@ class Notchling < Formula
 
   bottle do
     root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.2"
-    sha256 cellar: :any_skip_relocation, all: "46a8012b80e955b7bc315f34497a48eb7024a70e4cbc73b9840fe5ca7c63911b"
+    sha256 cellar: :any_skip_relocation, all: "85dfaa7802680278d0ff1201a6b9e133e6e4ff68507b34179e353ece367a99a2"
   end
 
   # Builds on the user's machine instead, for contributors and for anyone who would rather not run a
