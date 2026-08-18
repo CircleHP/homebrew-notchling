@@ -1,18 +1,13 @@
 class Notchling < Formula
   desc "Notch widget showing live status for every Claude Code session"
   homepage "https://github.com/CircleHP/notchling"
-  url "https://github.com/CircleHP/notchling/releases/download/v1.0.1/notchling-1.0.1-universal.tar.gz"
-  sha256 "625be0f4fa3a08b76a30df4ab96f48102b3211d96032fffea70999f77b181c9e"
+  url "https://github.com/CircleHP/notchling/releases/download/v1.0.2/notchling-1.0.2-universal.tar.gz"
+  sha256 "ece14591f6322f921420f7ac41094bcd44f63aa7819570de36108e63c045d185"
   license "MIT"
 
   livecheck do
     url :stable
     strategy :github_latest
-  end
-
-  bottle do
-    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.1"
-    sha256 cellar: :any_skip_relocation, all: "679df893b9296b68ac2451664f71fb34f00c8bdc9b8a73987f5bb2671ecd6a55"
   end
 
   # Builds on the user's machine instead, for contributors and for anyone who would rather not run a
@@ -46,6 +41,7 @@ class Notchling < Formula
     # a path into the Cellar goes stale on the next upgrade and every hook silently stops firing.
     bin.install_symlink prefix/"Notchling.app/Contents/MacOS/notchling-hook"
     bin.install_symlink prefix/"Notchling.app/Contents/Resources/install-hooks.sh" => "notchling-hooks"
+    bin.install_symlink prefix/"Notchling.app/Contents/Resources/list-sessions.sh" => "notchling-sessions"
   end
 
   # This app draws windows, so it has to run in the logged-in GUI session rather than as a daemon.
