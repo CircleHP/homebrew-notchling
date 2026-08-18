@@ -57,9 +57,13 @@ jobs:
           echo "cellar: $cellar"
           test "$cellar" = "any_skip_relocation"
 
+          # One dash, not the two `brew bottle` writes. Homebrew names the local file
+          # "name--version.tag.bottle.tar.gz" but fetches "name-version.tag.bottle.tar.gz"
+          # (bottle.rb: Filename#to_str versus #url_encode), and the published asset has to match
+          # the name it fetches, not the one it wrote.
           built=$(ls ./*.bottle.tar.gz)
-          mv "$built" "notchling--$VERSION.all.bottle.tar.gz"
-          echo "BOTTLE_SHA=$(shasum -a 256 "notchling--$VERSION.all.bottle.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
+          mv "$built" "notchling-$VERSION.all.bottle.tar.gz"
+          echo "BOTTLE_SHA=$(shasum -a 256 "notchling-$VERSION.all.bottle.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
 
       - name: Publish the bottle
         env:
@@ -69,8 +73,8 @@ jobs:
           gh release create "bottle-$VERSION" \
             --title "Bottle $VERSION" \
             --notes "Bottle for notchling $VERSION. Poured by \`brew install circlehp/notchling/notchling\`." \
-            "notchling--$VERSION.all.bottle.tar.gz" \
-          || gh release upload "bottle-$VERSION" "notchling--$VERSION.all.bottle.tar.gz" --clobber
+            "notchling-$VERSION.all.bottle.tar.gz" \
+          || gh release upload "bottle-$VERSION" "notchling-$VERSION.all.bottle.tar.gz" --clobber
 
       - name: Record the bottle in the formula
         env:
@@ -117,5 +121,5 @@ jobs:
           brew uninstall --force notchling
           git -C "$(brew --repository CircleHP/notchling)" pull --quiet
           brew install circlehp/notchling/notchling 2>&1 | tee install.log
-          grep -q "Pouring notchling--$VERSION.all.bottle.tar.gz" install.log
+          grep -q "Pouring notchling-$VERSION.all.bottle.tar.gz" install.log
           brew test circlehp/notchling/notchling
