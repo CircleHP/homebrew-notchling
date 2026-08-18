@@ -119,7 +119,11 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           brew uninstall --force notchling
-          git -C "$(brew --repository CircleHP/notchling)" pull --quiet
+          # Homebrew's clone of the tap has no tracking branch, so `git pull` has nothing to
+          # pull from. Fetch and reset to what the previous step just pushed.
+          tap_dir="$(brew --repository CircleHP/notchling)"
+          git -C "$tap_dir" fetch --quiet origin main
+          git -C "$tap_dir" reset --hard --quiet origin/main
           brew install circlehp/notchling/notchling 2>&1 | tee install.log
           grep -q "Pouring notchling-$VERSION.all.bottle.tar.gz" install.log
           brew test circlehp/notchling/notchling
