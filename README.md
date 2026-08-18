@@ -2,15 +2,15 @@
 
 ## How do I install these formulae?
 
-`brew install circlehp/notchling/<formula>`
+`brew install circlehp/notchling/notchling`
 
-Or `brew tap circlehp/notchling` and then `brew install <formula>`.
+Or `brew tap circlehp/notchling` and then `brew install notchling`.
 
 Or, in a `brew bundle` `Brewfile`:
 
 ```ruby
 tap "circlehp/notchling"
-brew "<formula>"
+brew "notchling"
 ```
 
 ## Documentation
