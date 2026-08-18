@@ -31,7 +31,10 @@ class Notchling < Formula
       system "make", "bundle", "SIGN_ID="
       prefix.install ".build/bundle/Notchling.app"
     else
-      prefix.install "Notchling.app"
+      # Homebrew strips the single top-level directory as it unpacks, so what this is standing in is
+      # the bundle itself rather than its parent. Rebuild the wrapper rather than reshaping the
+      # archive, which would invalidate every checksum already published.
+      (prefix/"Notchling.app").install Dir["*"]
     end
 
     # Both symlinks are version-independent, which is what hooks and the status line must record:
