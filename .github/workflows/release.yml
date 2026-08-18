@@ -80,12 +80,17 @@ jobs:
           brew style --fix Formula/notchling.rb
           head -8 Formula/notchling.rb
 
-      # Homebrew reads the formula from its own clone of the tap, so the rewritten one has to be put
-      # there. `brew bottle` repackages an installed keg and refuses one not installed this way.
+      # Homebrew reads the formula from its own clone of the tap, so the rewritten one has to be
+      # visible there — though setup-homebrew usually links this checkout in as the tap already, in
+      # which case there is nothing to copy. `brew bottle` repackages an installed keg and refuses
+      # one not installed this way.
       - name: Install for bottling
         run: |
           brew tap CircleHP/notchling
-          cp Formula/notchling.rb "$(brew --repository CircleHP/notchling)/Formula/notchling.rb"
+          tap_dir="$(brew --repository CircleHP/notchling)"
+          if [ "$(cd "$tap_dir" && pwd -P)" != "$(pwd -P)" ]; then
+            cp Formula/notchling.rb "$tap_dir/Formula/notchling.rb"
+          fi
           brew install --build-bottle circlehp/notchling/notchling
           installed=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
             "$(brew --prefix)/opt/notchling/Notchling.app/Contents/Info.plist")
