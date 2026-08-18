@@ -1,8 +1,8 @@
 class Notchling < Formula
   desc "Notch widget showing live status for every Claude Code session"
   homepage "https://github.com/CircleHP/notchling"
-  url "https://github.com/CircleHP/notchling/releases/download/v1.0.2/notchling-1.0.2-universal.tar.gz"
-  sha256 "ece14591f6322f921420f7ac41094bcd44f63aa7819570de36108e63c045d185"
+  url "https://github.com/CircleHP/notchling/releases/download/v1.0.3/notchling-1.0.3-universal.tar.gz"
+  sha256 "24ef830ca42d60fc9244bf31c09918656059334fb605e13844c8cb7c06bcd94e"
   license "MIT"
 
   livecheck do
@@ -11,8 +11,8 @@ class Notchling < Formula
   end
 
   bottle do
-    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.2"
-    sha256 cellar: :any_skip_relocation, all: "85dfaa7802680278d0ff1201a6b9e133e6e4ff68507b34179e353ece367a99a2"
+    root_url "https://github.com/CircleHP/homebrew-notchling/releases/download/bottle-1.0.3"
+    sha256 cellar: :any_skip_relocation, all: "084925cc47b1486750a09467ce53e2d5aa3fe4dec4e8ac18e432eb909f7f7bc0"
   end
 
   # Builds on the user's machine instead, for contributors and for anyone who would rather not run a
