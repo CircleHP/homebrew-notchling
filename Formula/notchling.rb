@@ -64,8 +64,8 @@ class Notchling < Formula
         notchling-hooks setup
 
       It wires the Claude Code hooks, offers the plan-usage status line, and starts the widget
-      now and at login. Then restart any Claude sessions that were already running — hooks are
-      read at session start.
+      now and at login — so the `brew services` command below is already covered. Then restart
+      any Claude sessions that were already running — hooks are read at session start.
 
       To have the hooks come from a plugin instead, so nothing edits ~/.claude/settings.json,
       run this inside Claude Code rather than the command above:
