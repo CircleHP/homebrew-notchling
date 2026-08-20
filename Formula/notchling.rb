@@ -57,15 +57,23 @@ class Notchling < Formula
     process_type :interactive
   end
 
+  # Homebrew prints this on upgrade as well as on install, and hands `Caveats` nothing that says
+  # which one it is — so both cases are spelled out rather than one being written over the other.
   def caveats
     <<~EOS
-      One command finishes the setup, asking before it changes anything:
+      First time? One command finishes the setup, asking before it changes anything:
 
         notchling-hooks setup
 
       It wires the Claude Code hooks, offers the plan-usage status line, and starts the widget
       now and at login — so the `brew services` command below is already covered. Then restart
       any Claude sessions that were already running — hooks are read at session start.
+
+      Upgrading? Nothing needs rewiring: the hooks and the status line record version-independent
+      paths, which this upgrade has already repointed, and sessions pick up the new hook without
+      restarting. The widget itself does not — it keeps running the version it started with until:
+
+        brew services restart notchling
 
       To have the hooks come from a plugin instead, so nothing edits ~/.claude/settings.json,
       run this inside Claude Code rather than the command above:
