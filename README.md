@@ -4,7 +4,7 @@ A native macOS notch widget that shows what every Claude Code session is doing, 
 the one that needs you. Click a row, land in the terminal tab that owns it.
 
 <p align="center">
-  <img src="https://github.com/CircleHP/notchling/raw/main/media/notchling.gif" width="700" alt="Notchling in the notch: a compact strip showing session counts drops open into a panel listing three Claude Code sessions — one blocked on a permission prompt with three subagents beneath it, one editing, one finished — then closes again">
+  <img src="https://github.com/CircleHP/notchling/raw/main/media/notchling.gif" width="700" alt="Notchling in the notch: a compact strip showing session counts drops open by itself into a panel listing six Claude Code sessions — one blocked on a permission prompt, one whose turn failed, three working, one just finished — with a subagent beneath one of them, coloured bars marking the sessions the user has tagged, and plan-usage meters at the bottom, then closes again">
 </p>
 
 This repository is the tap. The app itself, its documentation and its issues live in
